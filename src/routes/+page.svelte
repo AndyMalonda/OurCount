@@ -1,25 +1,28 @@
 <script lang="js">
-  import { round } from "$src/utils";
+  // @ts-nocheck
+
+  import { round, uuid } from "$src/utils";
   class Person {
-    // @ts-ignore
-    constructor(name, salary, ratio, expenses, paid, balance) {
+    constructor(id, name, salary, ratio, expenses, paid, balance) {
+      this.id = id;
       this.name = name;
       this.salary = salary;
       this.ratio = ratio;
       this.expenses = expenses;
       this.paid = paid;
       this.balance = balance;
+      this.balanceBfrRatio = balance;
     }
   }
 
   // declare array of person
   let persons = [
-    new Person("John", 1000),
-    new Person("Mary", 2000),
-    new Person("Bob", 3000),
-    new Person("Alice", 2300),
-    new Person("Eve", 1500),
-    new Person("Mallory", 1200),
+    new Person(uuid(), "John", 1000),
+    new Person(uuid(), "Mary", 2000),
+    new Person(uuid(), "Bob", 3000),
+    new Person(uuid(), "Alice", 2300),
+    new Person(uuid(), "Eve", 1500),
+    new Person(uuid(), "Mallory", 1200),
   ];
 
   // declare total salary
@@ -34,8 +37,8 @@
   let averageSalary = totalSalary / persons.length;
 
   class Expense {
-    // @ts-ignore
-    constructor(name, amount, payedBy, sharedBy) {
+    constructor(id, name, amount, payedBy, sharedBy) {
+      this.id = id;
       this.name = name;
       this.amount = amount;
       this.payedBy = payedBy;
@@ -45,14 +48,13 @@
 
   // declare array of expense
   let expenses = [
-    new Expense("Food", 100, "John", ["John", "Mary"]),
-    new Expense("Rent", 300, "Mary", ["John", "Mary", "Bob"]),
-    new Expense("Transport", 200, "Bob", ["Bob", "Mary"]),
-    new Expense("Food2", 100, "Alice", ["Alice", "Eve"]),
-    new Expense("Rent2", 300, "Eve", ["Alice", "Eve", "Mallory"]),
-    new Expense("Transport2", 200, "Mallory", ["Mallory", "Eve"]),
-    new Expense("Food3", 100, "John", ["John", "Mallory"]),
-    new Expense("Rent3", 300, "John", ["John", "Mallory", "Bob"]),
+    new Expense(uuid(), "Food", 100, "John", ["John", "Mary"]),
+    new Expense(uuid(), "Rent", 300, "Mary", ["John", "Mary", "Bob"]),
+    new Expense(uuid(), "Transport", 200, "Bob", ["Bob", "Mary"]),
+    new Expense(uuid(), "Food", 100, "Alice", ["Alice", "Eve"]),
+    new Expense(uuid(), "Rent", 300, "Eve", ["Alice", "Eve", "Mallory"]),
+    new Expense(uuid(), "Transport", 200, "Mallory", ["Mallory", "Eve"]),
+    new Expense(uuid(), "Food", 50, "John", ["John", "Mary"]),
   ];
 
   // declare total expense
@@ -91,9 +93,8 @@
   // calculate balance of individual person
   for (let person of persons) {
     person.balance = person.paid - person.expenses;
-    person.balanceBfrCalc = person.balance;
+    person.balanceBfrRatio = person.balance;
   }
-
 
   // determine who should pay whom
   let payers = [];
@@ -112,8 +113,8 @@
     for (let payee of payees) {
       if (payer.balance > 0 && payee.balance < 0) {
         let transaction = {
-          from: payer.name,
-          to: payee.name,
+          toPay: payer.name,
+          toReceive: payee.name,
           amount: Math.min(payer.balance, -payee.balance),
         };
         transactions.push(transaction);
@@ -123,6 +124,8 @@
     }
   }
 
+  console.log(persons);
+  console.log(transactions);
 </script>
 
 <h1>Persons</h1>
@@ -146,19 +149,25 @@
         <td>{round(person.ratio)}%</td>
         <td>{person.expenses}</td>
         <td>{person.paid}</td>
-        <td>{person.balanceBfrCalc}</td>
+        <td>{person.balanceBfrRatio}</td>
       </tr>
     {/each}
     <!-- add a person -->
     <tr>
-      <td><input type="text" placeholder="Name" /></td>
-      <td><input type="number" placeholder="Salary" /></td>
-      <td><button>Add</button></td>
-    </tr>
+      <form method="POST" action="/persons">
+        <td><input type="text" name="name" placeholder="Name" /></td>
+        <td><input type="number" name="salary" placeholder="Salary" /></td>
+        <td />
+        <td />
+        <td />
+        <td />
+        <td><button type="submit">Add</button></td>
+      </form></tr
+    >
     <tr>
       <td>Total</td>
       <td>{totalSalary} (avg: {round(averageSalary)})</td>
-      <td></td>
+      <td />
     </tr>
   </tbody>
 </table>
@@ -192,8 +201,9 @@
     <tr>
       <td>Total</td>
       <td>{totalExpense}</td>
-      <td></td>
-  </tbody>
+      <td />
+    </tr></tbody
+  >
 </table>
 
 <h1>Transactions</h1>
@@ -209,8 +219,8 @@
   <tbody>
     {#each transactions as transaction}
       <tr>
-        <td>{transaction.from}</td>
-        <td>{transaction.to}</td>
+        <td>{transaction.toReceive}</td>
+        <td>{transaction.toPay}</td>
         <td>{transaction.amount}</td>
       </tr>
     {/each}
@@ -218,16 +228,18 @@
 </table>
 
 <style>
-  
   table {
     border-collapse: collapse;
   }
 
-  table, th, td {
+  table,
+  th,
+  td {
     border: 1px solid black;
   }
 
-  th, td {
+  th,
+  td {
     padding: 5px;
   }
 
